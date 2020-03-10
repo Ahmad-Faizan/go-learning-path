@@ -50,10 +50,10 @@ func processForm(r *http.Request) ([]float64, string, bool) {
 	if slice, ok := r.Form["numbers"]; ok && len(slice) > 0 {
 		filteredSlice := strings.ReplaceAll(slice[0], ",", " ")
 		for _, field := range strings.Fields(filteredSlice) {
-			if num, err := strconv.ParseFloat(field, 64); err != nil {
-				return numbers, "&lt;" + field + "&gt; is invalid", false
-			} else {
+			if num, err := strconv.ParseFloat(field, 64); err == nil {
 				numbers = append(numbers, num)
+			} else {
+				return numbers, "&lt;" + field + "&gt; is invalid", false
 			}
 		}
 	}
