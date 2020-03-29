@@ -64,8 +64,8 @@ func generatePLS(songs []song) {
 }
 
 func parseEXTINF(line string) (duration int, title string) {
-	if i := strings.IndexAny(line, "-0123456789"); i > -1 {
-		line = line[i:]
+	if i := strings.Index(line, ":"); i > -1 {
+		line = line[i+1:]
 		const separator = ","
 		if j := strings.Index(line, ","); j > -1 {
 			title = line[j+len(separator):]
