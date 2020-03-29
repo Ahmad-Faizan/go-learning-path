@@ -66,10 +66,9 @@ func generatePLS(songs []song) {
 func parseEXTINF(line string) (duration int, title string) {
 	if i := strings.IndexAny(line, "-0123456789"); i > -1 {
 		line = line[i:]
-		//fmt.Println(line)
+		const separator = ","
 		if j := strings.Index(line, ","); j > -1 {
-			title = line[j+len(","):]
-			//fmt.Println(title)
+			title = line[j+len(separator):]
 			var err error
 			if duration, err = strconv.Atoi(line[:j]); err != nil {
 				log.Printf("Duration cannot be parsed for %s : %v", title, err)
