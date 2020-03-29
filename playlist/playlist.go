@@ -41,7 +41,7 @@ func parseM3Ufile(rawData string) (songs []song) {
 		if strings.HasPrefix(line, "#EXTINF") {
 			songData.duration, songData.title = parseEXTINF(line)
 		} else {
-			songData.path = line
+			songData.path = strings.Map(mapPlatformSeparator, line)
 		}
 
 		if songData.duration != 0 && songData.path != "" && songData.title != "" {
@@ -77,4 +77,11 @@ func parseEXTINF(line string) (duration int, title string) {
 		}
 	}
 	return duration, title
+}
+
+func mapPlatformSeparator(char rune) rune {
+	if char == '/' || char == '\\' {
+		return filepath.Separator
+	}
+	return char
 }
