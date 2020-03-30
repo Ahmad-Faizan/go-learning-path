@@ -17,16 +17,23 @@ type song struct {
 }
 
 func main() {
-	if len(os.Args) == 1 || !strings.HasSuffix(os.Args[1], ".m3u") {
-		fmt.Printf("usage: <%s> filename1.m3u > filename2.pls\n", filepath.Base(os.Args[0]))
+	if len(os.Args) == 1 ||
+		(!strings.HasSuffix(os.Args[1], ".m3u") &&
+			!strings.HasSuffix(os.Args[1], ".pls")) {
+		fmt.Printf("usage: %s <filename.[m3u|pls]>\n", filepath.Base(os.Args[0]))
 		os.Exit(1)
 	}
 
 	if rawBytes, err := ioutil.ReadFile(os.Args[1]); err != nil {
 		log.Fatal(err)
 	} else {
-		songs := parseM3Ufile(string(rawBytes))
-		generatePLS(songs)
+		if strings.HasSuffix(os.Args[1], ".m3u") {
+			songs := parseM3Ufile(string(rawBytes))
+			generatePLS(songs)
+		} else {
+			songs := parsePLSfile(string(rawBytes))
+			generateM3U(songs)
+		}
 	}
 }
 
@@ -52,6 +59,32 @@ func parseM3Ufile(rawData string) (songs []song) {
 	return songs
 }
 
+func parsePLSfile(rawData string) (songs []song) {
+	var songData song
+	for _, line := range strings.Split(rawData, "\n") {
+		if line = strings.TrimSpace(line); line == "" {
+			continue
+		}
+		switch name, value := parsePLSline(line); name {
+		case "File":
+			songData.path = strings.Map(mapPlatformSeparator, value)
+		case "Title":
+			songData.title = value
+		case "Length":
+			var err error
+			if songData.duration, err = strconv.Atoi(value); err != nil {
+				log.Printf("Duration cannot be parsed for %s : %v", songData.title, err)
+				songData.duration = -1
+			}
+		}
+		if songData.path != "" && songData.title != "" && songData.duration != 0 {
+			songs = append(songs, songData)
+			songData = song{}
+		}
+	}
+	return songs
+}
+
 func generatePLS(songs []song) {
 	fmt.Println("[playlist]")
 	for index, s := range songs {
@@ -61,6 +94,13 @@ func generatePLS(songs []song) {
 		fmt.Printf("Length%v=%v\n", index, s.duration)
 	}
 	fmt.Printf("NumberOfEntries=%v\nVersion=2", len(songs))
+}
+
+func generateM3U(songs []song) {
+	fmt.Println("#EXTM3U")
+	for _, s := range songs {
+		fmt.Printf("#EXTINF:%v,%v\n%v\n", s.duration, s.title, s.path)
+	}
 }
 
 func parseEXTINF(line string) (duration int, title string) {
@@ -77,6 +117,17 @@ func parseEXTINF(line string) (duration int, title string) {
 		}
 	}
 	return duration, title
+}
+
+func parsePLSline(line string) (name, value string) {
+	const separator = "="
+	if i := strings.Index(line, separator); i > -1 {
+		if j := strings.IndexAny(line, "0123456789"); j > -1 && j < i {
+			name = line[:j]
+			value = line[i+len(separator):]
+		}
+	}
+	return name, value
 }
 
 func mapPlatformSeparator(char rune) rune {
