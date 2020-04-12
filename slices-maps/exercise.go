@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -40,6 +41,8 @@ func main() {
 	}
 	mapINI := parseINI(dataINI)
 	prettyPrintINI(mapINI)
+
+	printINI(mapINI)
 }
 
 func uniqueInts(duplicates []int) (unique []int) {
@@ -119,4 +122,25 @@ func prettyPrintINI(iniMap map[string]groupMap) {
 		size = len("map[")
 	}
 	fmt.Print("]")
+}
+
+func printINI(iniMap map[string]groupMap) {
+	keys := make([]string, 0, len(iniMap))
+	for key := range iniMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	fmt.Println()
+	for _, key := range keys {
+		fmt.Printf("[%s]\n", key)
+		groupKeys := make([]string, 0, len(iniMap[key]))
+		for gKey := range iniMap[key] {
+			groupKeys = append(groupKeys, gKey)
+		}
+		sort.Strings(groupKeys)
+		for _, gKey := range groupKeys {
+			fmt.Printf("%s=%s\n", gKey, iniMap[key][gKey])
+		}
+		fmt.Println()
+	}
 }
